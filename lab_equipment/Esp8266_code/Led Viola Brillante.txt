@@ -1,0 +1,41 @@
+Led Viola Brillante
+#include <Adafruit_NeoPixel.h>
+
+// **************** CONFIGURAZIONE NEOPIXEL ****************
+// Il pin D2 sull'ESP8266 corrisponde a GPIO4.
+// SE usi una scheda ESP8266 generica con pin "D2", il pin effettivo è GPIO4.
+#define PIN            4  
+// Numero di NeoPixel collegati.
+#define NUMPIXELS      3  
+
+// Creazione dell'oggetto Adafruit_NeoPixel
+// Parametro 1: Numero di pixel
+// Parametro 2: Pin a cui sono collegati (GPIO4 / D2)
+// Parametro 3: Tipo di pixel (NEO_GRB è il più comune per WS2812B, NEO_KHZ800 è la velocità standard)
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+void setup() {
+  // Inizializza la striscia NeoPixel
+  pixels.begin(); 
+  // Cancella i dati precedenti e spegne i pixel inizialmente
+  pixels.clear(); 
+  pixels.show(); 
+}
+
+// la funzione loop viene eseguita ripetutamente
+void loop() {
+  // **************** ACCENDI I PIXEL DI ROSSO ****************
+  
+  // Definisce il colore Rosso (R, G, B) -> (255, 0, 0)
+  // Puoi regolare la luminosità abbassando il valore 255 (es. 50, 0, 0 per un rosso più tenue)
+  uint32_t purple = pixels.Color(160, 32, 240);
+
+  // Imposta il colore Viola per tutti i 3 pixel
+  pixels.fill(purple, 0, NUMPIXELS); 
+
+  // Invia i dati del colore aggiornati alla striscia NeoPixel per accenderli
+  pixels.show(); 
+
+  // Non è necessario un delay lungo, ma lo teniamo per la stabilità.
+  delay(100); 
+}

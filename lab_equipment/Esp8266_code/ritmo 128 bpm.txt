@@ -1,0 +1,69 @@
+ritmo 128 bpm
+#include <Adafruit_NeoPixel.h>
+
+// **************** CONFIGURAZIONE NEOPIXEL ****************
+#define PIN            4      // Il pin D2 sull'ESP8266 è GPIO4.
+#define NUMPIXELS      3      // Numero di NeoPixel
+#define BPM            128    // Circa il BPM (Beats Per Minute) della canzone
+#define BEAT_TIME      (60000 / BPM) // Tempo in ms per una singola battuta (~468.75ms)
+#define NUM_BEATS      4      // Numero di battute nel ciclo (4/4)
+
+// Creazione dell'oggetto Adafruit_NeoPixel. DEVE essere prima delle definizioni dei colori.
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+
+// **************** DEFINIZIONI DEI COLORI STRANI (Variabili Globali) ****************
+// Dichiariamo le variabili qui, ma le inizializziamo (usando pixels.Color) nel setup().
+uint32_t baseColor; 
+uint32_t kickColor; 
+uint32_t secondaryBeatColor; 
+uint32_t offColor; 
+
+
+void setup() {
+  pixels.begin(); 
+  pixels.setBrightness(255); // Luminosità massima per un effetto "neon"
+  pixels.clear(); 
+  pixels.show(); 
+  
+  // **************** ASSEGNAZIONE DEI COLORI CORRETTA ****************
+  // Ora che pixels è creato, possiamo usare pixels.Color()
+  baseColor          = pixels.Color(255, 0, 150); // Magenta Acido
+  kickColor          = pixels.Color(100, 255, 0); // Lime Verde Neon (KICK)
+  secondaryBeatColor = pixels.Color(0, 255, 255); // Ciano Elettrico
+  offColor           = pixels.Color(0, 0, 0);     // Spento
+}
+
+void loop() {
+  
+  // 1. IMPOSTA il colore di BASE (Magenta Acido)
+  pixels.fill(baseColor);
+  pixels.show();
+  delay(100); 
+
+  // 2. IL BEAT PRINCIPALE (Kick Drum) - Battito 1
+  
+  // Flash LIME VERDE NEON (KICK)
+  pixels.fill(kickColor);
+  pixels.show();
+  delay(80); 
+
+  // Torna al colore di Base (Magenta Acido)
+  pixels.fill(baseColor);
+  pixels.show();
+  delay(BEAT_TIME - 80); 
+
+  // 3. I BEAT SUCCESSIVI (Snare/Hi-Hat/Bassline) - Battiti 2, 3, 4
+  for(int beat = 2; beat <= NUM_BEATS; beat++) {
+    
+    // Pattern: FLASH CIANO ELETTRICO
+    pixels.fill(secondaryBeatColor); 
+    pixels.show();
+    delay(50); 
+
+    // Torna al colore di Base (Magenta Acido)
+    pixels.fill(baseColor);
+    pixels.show();
+    delay(BEAT_TIME - 50); 
+  }
+}

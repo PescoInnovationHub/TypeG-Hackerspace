@@ -1,0 +1,75 @@
+Italia in movimento
+#include <Adafruit_NeoPixel.h>
+
+// **************** CONFIGURAZIONE NEOPIXEL ****************
+#define PIN            4      // Il pin D2 sull'ESP8266 è GPIO4.
+#define NUMPIXELS      3      // Numero di NeoPixel (Verde, Bianco, Rosso).
+#define DELAY_TIME     200    // Tempo di attesa in millisecondi tra uno spostamento e l'altro (0.5 secondi)
+
+// Creazione dell'oggetto Adafruit_NeoPixel
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+// **************** DEFINIZIONI DEI COLORI ****************
+// Ho scelto una luminosità media (max 128) per ridurre il consumo e l'intensità.
+#define LUMINOSITY     64 
+
+// VERDE (tipico verde bandiera)
+const uint32_t green = pixels.Color(0, LUMINOSITY, 0);
+
+// BIANCO (tutti i colori al massimo o quasi)
+const uint32_t white = pixels.Color(LUMINOSITY, LUMINOSITY, LUMINOSITY);
+
+// ROSSO (tipico rosso bandiera)
+const uint32_t red   = pixels.Color(LUMINOSITY, 0, 0);
+
+// Array per memorizzare i tre colori della bandiera in ordine (Verde, Bianco, Rosso)
+const uint32_t flagColors[NUMPIXELS] = {green, white, red};
+
+// Variabile per tenere traccia di quale pixel deve iniziare il ciclo in loop
+int currentStartPixel = 0; 
+
+
+void setup() {
+  // Inizializza la striscia NeoPixel
+  pixels.begin(); 
+  // Imposta la luminosità (opzionale, ma utile)
+  pixels.setBrightness(255); 
+  // Cancella i dati precedenti
+  pixels.clear(); 
+  pixels.show(); 
+}
+
+
+// la funzione loop viene eseguita ripetutamente
+void loop() {
+  
+  // Ciclo per impostare i colori dei 3 pixel in base all'offset 'currentStartPixel'
+  for(int i = 0; i < NUMPIXELS; i++) {
+    // Calcola l'indice del colore da usare. 
+    // Usiamo l'operatore modulo (%) per far 'tornare indietro' l'indice quando supera 2 (il limite dell'array flagColors).
+    // Esempio: 
+    // i=0, currentStartPixel=0 -> (0 + 0) % 3 = 0 (Verde) -> Pixel 0 = Verde
+    // i=1, currentStartPixel=0 -> (1 + 0) % 3 = 1 (Bianco) -> Pixel 1 = Bianco
+    // i=2, currentStartPixel=0 -> (2 + 0) % 3 = 2 (Rosso) -> Pixel 2 = Rosso
+    
+    // Al ciclo successivo (currentStartPixel=1):
+    // i=0, currentStartPixel=1 -> (0 + 1) % 3 = 1 (Bianco) -> Pixel 0 = Bianco
+    // i=1, currentStartPixel=1 -> (1 + 1) % 3 = 2 (Rosso) -> Pixel 1 = Rosso
+    // i=2, currentStartPixel=1 -> (2 + 1) % 3 = 0 (Verde) -> Pixel 2 = Verde
+    
+    int colorIndex = (i + currentStartPixel) % NUMPIXELS;
+    
+    // Imposta il colore per il pixel corrente 'i'
+    pixels.setPixelColor(i, flagColors[colorIndex]);
+  }
+  
+  // Invia i dati aggiornati alla striscia
+  pixels.show(); 
+  
+  // Attende il tempo di spostamento
+  delay(DELAY_TIME); 
+  
+  // Incrementa l'indice di partenza per il prossimo ciclo.
+  // L'operatore modulo %3 assicura che il valore torni a 0 quando arriva a 3.
+  currentStartPixel = (currentStartPixel + 1) % NUMPIXELS; 
+}

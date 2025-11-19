@@ -1,0 +1,65 @@
+Bandiera italiana
+#include <Adafruit_NeoPixel.h>
+
+// **************** CONFIGURAZIONE NEOPIXEL ****************
+// Il pin D2 sull'ESP8266 corrisponde a GPIO4.
+#define PIN            4  
+// Numero di NeoPixel collegati (Verde, Bianco, Rosso).
+#define NUMPIXELS      3  
+
+// Creazione dell'oggetto Adafruit_NeoPixel
+// Parametro 1: Numero di pixel
+// Parametro 2: Pin a cui sono collegati (GPIO4 / D2)
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+// **************** DEFINIZIONI DEI COLORI ****************
+// Nota: R, G, B hanno valori da 0 a 255.
+// Ho usato valori leggermente ridotti per non accecare, 
+// specialmente per il Bianco (che usa tutti e tre al massimo).
+
+// VERDE (tipico verde bandiera)
+uint32_t green;
+
+// BIANCO (tutti i colori al massimo o quasi)
+uint32_t white;
+
+// ROSSO (tipico rosso bandiera)
+uint32_t red;
+
+
+void setup() {
+  // Inizializza la striscia NeoPixel
+  pixels.begin(); 
+  // Cancella i dati precedenti
+  pixels.clear(); 
+  
+  // Assegna i valori di colore
+  // Colori RGB in formato (R, G, B)
+  green = pixels.Color(0, 255, 0); // Verde puro
+  white = pixels.Color(255, 255, 255); // Bianco puro (puoi usare 100, 100, 100 per un bianco più soft)
+  red   = pixels.Color(255, 0, 0);   // Rosso puro
+  
+  // Accendiamo la bandiera in setup in modo che rimanga fissa
+  
+  // 1. Imposta il Pixel 0 (il primo) su VERDE
+  pixels.setPixelColor(0, green);
+  
+  // 2. Imposta il Pixel 1 (il secondo) su BIANCO
+  pixels.setPixelColor(1, white);
+  
+  // 3. Imposta il Pixel 2 (il terzo) su ROSSO
+  pixels.setPixelColor(2, red);
+  
+  // Invia i dati del colore aggiornati alla striscia NeoPixel
+  pixels.show(); 
+}
+
+// la funzione loop viene eseguita ripetutamente
+void loop() {
+  // Lasciamo il loop vuoto. 
+  // La bandiera è stata impostata nel setup e rimarrà accesa.
+  
+  // Se volessi animare o fare qualcosa nel tempo, 
+  // dovresti inserire il codice qui.
+  delay(100); 
+}
