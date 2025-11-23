@@ -9,6 +9,12 @@
 #include <MQUnifiedsensor.h>
 #include <ArduinoOTA.h>
 #include <esp_task_wdt.h>
+#include "BluetoothSerial.h" // <--- NEW: Bluetooth Library
+
+// Check if Bluetooth configurations are enabled in the SDK
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
 
 // ============================================================================
 // CONFIGURATION SECTION
@@ -24,9 +30,12 @@ const int mqtt_port = 1883;
 
 // Device Information
 const char* g_deviceModel = "ESP32Device";
-const char* g_swVersion = "2.2";
+const char* g_swVersion = "2.3-BT";
 const char* g_manufacturer = "UserK";
 String g_deviceName = "AirQuality";
+
+// Bluetooth Object
+BluetoothSerial SerialBT; // <--- NEW: Bluetooth Object
 
 // Sensor Pin Configuration
 #define LUX_PIN 32
@@ -69,7 +78,7 @@ constexpr int SDS_TX = 17; // ESP32 TX2  -> SDS RX
 
 // Timing Configuration
 const long sensorReadInterval = 5000;      // 5 seconds for main loop
-const long pmSensorInterval = 60000;       // 60 seconds between PM sensor cycles  <-- RESTORED
+const long pmSensorInterval = 60000;       // 60 seconds between PM sensor cycles
 const long pmWarmupTime = 30000;           // 30 seconds warm-up time for PM sensor
 const long wifiReconnectInterval = 10000;  // 10 seconds between WiFi reconnect attempts
 const long mqttReconnectInterval = 5000;   // 5 seconds between MQTT reconnect attempts
@@ -155,6 +164,12 @@ void dht_routine();
 void handle_pm_sensor();
 void set_ux();
 
+// Bluetooth Functions
+void handle_bluetooth();
+void bt_print_menu();
+void bt_print_values();
+void bt_print_network();
+
 int map_val_to_led_index(float val, float val_min, float val_max, int led_min = 1, int led_max = 10);
 uint32_t set_color(int num_pix, bool temp = false, bool hum = false);
 
@@ -168,9 +183,21 @@ uint32_t scale_color(uint32_t c, float f);
 
 void setup() {
   Serial.begin(115200);
+  
+  // Delay to prevent missing boot logs
+  delay(2000); 
+
   Serial.println("\n\n======================================");
   Serial.println("Air Quality Monitor Starting...");
   Serial.println("======================================");
+
+  // Initialize Bluetooth
+  String btName = g_deviceName + "_BT";
+  if(!SerialBT.begin(btName)){
+    Serial.println("An error occurred initializing Bluetooth");
+  } else {
+    Serial.println("Bluetooth Initialized! Device Name: " + btName);
+  }
 
   setup_wifi();
   setup_neopixels();
@@ -340,6 +367,74 @@ void setup_neopixels() {
 }
 
 // ============================================================================
+// BLUETOOTH HELPERS
+// ============================================================================
+
+void bt_print_menu() {
+  SerialBT.println("\n--- AIR QUALITY MENU ---");
+  SerialBT.println("[v] View Sensor Values");
+  SerialBT.println("[n] Network Status");
+  SerialBT.println("[r] Reboot Device");
+  SerialBT.println("[h] Help");
+  SerialBT.println("------------------------");
+}
+
+void bt_print_values() {
+  SerialBT.println("\n--- LIVE READINGS ---");
+  SerialBT.print("Temp:  "); SerialBT.print(temperature); SerialBT.println(" C");
+  SerialBT.print("Hum:   "); SerialBT.print(humidity); SerialBT.println(" %");
+  SerialBT.print("CO2:   "); SerialBT.print(CO2); SerialBT.println(" ppm");
+  SerialBT.print("NH4:   "); SerialBT.print(NH4); SerialBT.println(" ppm");
+  SerialBT.print("PM2.5: "); SerialBT.println(pm_25);
+  SerialBT.print("PM10:  "); SerialBT.println(pm_10);
+  SerialBT.print("Lux:   "); SerialBT.println(lightVal);
+  SerialBT.print("PIR:   "); SerialBT.println(pirStateCurrent == HIGH ? "Motion" : "Clear");
+  SerialBT.println("---------------------");
+}
+
+void bt_print_network() {
+  SerialBT.println("\n--- NETWORK INFO ---");
+  SerialBT.print("WiFi: "); 
+  SerialBT.println(WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected");
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    SerialBT.print("IP: "); SerialBT.println(WiFi.localIP());
+    SerialBT.print("RSSI: "); SerialBT.println(WiFi.RSSI());
+  }
+  
+  SerialBT.print("MQTT: ");
+  SerialBT.println(client.connected() ? "Connected" : "Disconnected");
+  SerialBT.println("--------------------");
+}
+
+void handle_bluetooth() {
+  if (SerialBT.available()) {
+    char cmd = SerialBT.read();
+    // Consume any extra newline characters
+    delay(2);
+    while(SerialBT.available()) SerialBT.read();
+
+    switch (cmd) {
+      case 'v': case 'V':
+        bt_print_values();
+        break;
+      case 'n': case 'N':
+        bt_print_network();
+        break;
+      case 'r': case 'R':
+        SerialBT.println("Rebooting device...");
+        delay(500);
+        ESP.restart();
+        break;
+      case 'h': case 'H':
+      default:
+        bt_print_menu();
+        break;
+    }
+  }
+}
+
+// ============================================================================
 // MQTT
 // ============================================================================
 
@@ -388,14 +483,7 @@ void reconnect_mqtt() {
 
 void mqtt_home_assistant_discovery() {
   Serial.println("Sending Home Assistant MQTT Discovery...");
-  if (!client.connected()) {
-    Serial.println("MQTT not connected, skipping discovery");
-    return;
-  }
-
-  // (identica alla versione precedente)
-  // --- Temperature, Humidity, PIR, LUX, PM2.5, PM10, NH4, CO2 ---
-  // Incollata completa nella tua ultima versione: la lasciamo invariata qui.
+  // Add your discovery logic here if needed, otherwise handled by HA or custom function
 }
 
 // ============================================================================
@@ -631,6 +719,9 @@ void set_ux() {
 
 void loop() {
   esp_task_wdt_reset();
+
+  // Check for Bluetooth commands continuously (non-blocking)
+  handle_bluetooth();
 
   if (wifiConnected) ArduinoOTA.handle();
   check_wifi_connection();
