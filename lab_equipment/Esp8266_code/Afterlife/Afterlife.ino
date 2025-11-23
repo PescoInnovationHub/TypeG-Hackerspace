@@ -2,7 +2,7 @@
 
 // **************** CONFIGURAZIONE NEOPIXEL AFTERLIFE****************
 #define PIN            4      // Il pin D2 sull'ESP8266 è GPIO4.
-#define NUMPIXELS      45      // Numero di NeoPixel
+#define NUMPIXELS      40      // Numero di NeoPixel
 #define FADE_DELAY     120     // Tempo di attesa in ms tra ogni "passo" della dissolvenza (più basso = più veloce/fluido)
 #define STEPS          350    // Numero di passi (frames) per passare da un colore all'altro (più alto = più fluido)
 
@@ -12,7 +12,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 // **************** DEFINIZIONE DEI COLORI ****************
 // Nota: Usiamo l'array di colori per definire la sequenza.
 // RGB è più semplice per i colori non-standard.
-// Ho usato luminosità 100 per un fade più morbido.
+// Ho usato luminosità 220 per un fade brillante.
 // ...existing code...
 const uint32_t colorSequence[] = {
   pixels.Color(0, 255, 255),    // CIANO NEON
