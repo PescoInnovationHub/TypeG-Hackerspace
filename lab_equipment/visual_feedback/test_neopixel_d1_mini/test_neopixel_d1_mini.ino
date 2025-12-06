@@ -1,0 +1,70 @@
+Dynamic Arrow
+#include <Adafruit_NeoPixel.h>
+
+// **************** CONFIGURAZIONE NEOPIXEL ****************
+#define PIN            4      // Il pin D2 sull'ESP8266 è GPIO4.
+#define NUMPIXELS      3      // Numero di NeoPixel
+#define STEP_DELAY     100    // Tempo di attesa in millisecondi tra l'accensione di un pixel e l'altro (la velocità della "freccia")
+#define CYCLE_DELAY    500    // Tempo di attesa alla fine del ciclo prima di ricominciare (il tempo tra una freccia e l'altra)
+
+// Creazione dell'oggetto Adafruit_NeoPixel
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+// **************** DEFINIZIONI DEI COLORI ****************
+
+// Giallo/Arancione (tipico indicatore di direzione - R=255, G=80, B=0)
+// Ho scelto un giallo/arancione intenso. Regola i valori se vuoi un'altra tonalità.
+const uint32_t turnSignalColor = pixels.Color(255, 80, 0); 
+
+// Colore di spegnimento (Nero)
+const uint32_t offColor = pixels.Color(0, 0, 0);
+
+
+void setup() {
+  pixels.begin(); 
+  // Puoi regolare la luminosità da 0 a 255
+  pixels.setBrightness(200); 
+  pixels.clear(); 
+  pixels.show(); 
+}
+
+void loop() {
+  
+  // 1. SEQUENZA DI ACCENSIONE: Pixel 0 -> Pixel 1 -> Pixel 2
+  for (int i = 0; i < NUMPIXELS; i++) {
+    // Imposta il pixel corrente al colore della freccia
+    pixels.setPixelColor(i, turnSignalColor);
+    
+    // Invia i dati per accendere solo quel pixel
+    pixels.show();
+    
+    // Attendi per creare l'effetto sequenziale
+    delay(STEP_DELAY);
+  }
+  
+  // 2. PAUSA LUNGA: Attendi con tutti e tre i pixel accesi
+  delay(CYCLE_DELAY);
+  
+  // 3. SEQUENZA DI SPEGNIMENTO (Opzionale: puoi commentare questa parte se preferisci che si spengano tutti insieme)
+  /*
+  for (int i = 0; i < NUMPIXELS; i++) {
+    // Imposta il pixel corrente su spento
+    pixels.setPixelColor(i, offColor);
+    
+    // Invia i dati per spegnere quel pixel
+    pixels.show();
+    
+    // Attendi
+    delay(STEP_DELAY);
+  }
+  */
+  
+  // 3. SPEGNIMENTO SIMULTANEO (Più comune per l'effetto dinamico)
+  
+  // Spegne tutti i pixel insieme
+  pixels.clear(); 
+  pixels.show();
+  
+  // Attendi per il tempo tra un "lampeggio" e l'altro
+  delay(CYCLE_DELAY); 
+}
